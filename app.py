@@ -7,15 +7,13 @@ st.markdown("""
     <style>
     .stApp { background-color: #f2f2f2; }
     
-    /* --- LAYOUT OPTIMIERUNG --- */
-    /* Labels näher an das Eingabefeld */
+    /* ABSTÄNDE OPTIMIEREN */
     div[data-testid="stWidgetLabel"] p {
         margin-bottom: -20px !important;
         padding-bottom: 0px !important;
         font-weight: 600 !important;
     }
 
-    /* Vergrößerert den Abstand zwischen den einzelnen Abfrage-Blöcken */
     .stSelectbox, .stNumberInput, .stSlider, .stRadio {
         margin-bottom: 40px !important;
     }
@@ -166,7 +164,6 @@ with temp_col:
     d, m = (35, 50) if "1." in heizsystem else (55, 70)
     vorlauf = st.slider("Vorlauftemperatur (°C)", 30, m, d)
 
-# JAZ Logik (vereinfacht für Streamlit-Übersicht)
 jaz = 4.7 if vorlauf <= 35 else 3.4 if vorlauf <= 55 else 2.8
 
 st.divider()
@@ -176,7 +173,7 @@ render_header("3. Stromtarif & Vergleich")
 strombedarf_wp = waermebedarf / jaz if jaz > 0 else 0
 st.markdown(f'<div class="wp-bedarf-box"><small>IHR WERT FÜR DEN TARIFVERGLEICH</small><br><span style="font-size: 32px; font-weight: bold; color: #e65500;">{strombedarf_wp:,.0f} kWh / Jahr</span></div>', unsafe_allow_html=True)
 
-st.write("In unserem Rechner können Sie Ihre individuellen Stromkosten angeben. Wir empfehlen, die untenstehenden Vergleichsrechner zu nutzen, um den aktuell günsitgsten Tarif in Ihrem Haus zu finden. Sollten Sie nicht die Zeit oder Lust haben, jährlich manuell Ihren Stromtarif zu wechseln, empfehlen wir den Service von Cheapenergy24 – dieser übernimmt den regelmäßigen Wechsel dauerhaft und automatisch für Sie.")
+st.write("In unserem Rechner können Sie Ihren persönlichen Tarif finden und so eine aktuelle Einschätzung der Kosten bekommen. Wir empfehlen, die untenstehenden Vergleichsrechner zu nutzen, um dauerhaft im günstigsten Tarif Strom zu beziehen. Sollten Sie nicht die Zeit oder Lust haben, jährlich manuell Ihren Stromtarif zu wechseln, empfehlen wir den Service von Cheapenergy24 – dieser übernimmt den regelmäßigen Wechsel dauerhaft und automatisch für Sie.")
 
 col_links, col_preis = st.columns([1.5, 1])
 with col_links:
@@ -202,7 +199,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 st.link_button("Kontakt zur Fachplanung anfragen", "https://www.ceha-energieberatung.de/kontakt")
 st.caption("© CEHA ENERGIEBERATUNG UG (haftungsbeschränkt)")
 
-st.markdown(f"""
+st.markdown("""
     <div class="disclaimer-box">
         <strong>Rechtlicher Hinweis:</strong> Diese Online-Prognose dient ausschließlich der unverbindlichen Erstinformation und Orientierung. 
         Sie ersetzt keine individuelle Fachplanung, Heizlastberechnung nach DIN 12831 oder Vor-Ort-Energieberatung. 
