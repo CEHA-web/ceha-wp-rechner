@@ -1,7 +1,13 @@
 import streamlit as st
 
-# --- CEHA BRANDING & DESIGN (DARK MODE - MINIMALIST - V5) ---
+# --- CEHA BRANDING & DESIGN (DARK MODE - MINIMALIST - V6) ---
 st.set_page_config(page_title="ceha-Energieberatung | WP-Check", layout="centered")
+
+# Initialisierung der Session-State Werte für die automatische Anpassung
+if 'prev_energietraeger' not in st.session_state:
+    st.session_state.prev_energietraeger = "Heizöl"
+if 'verbrauch_val' not in st.session_state:
+    st.session_state.verbrauch_val = 2500
 
 st.markdown("""
     <style>
@@ -53,22 +59,17 @@ st.markdown("""
     }
 
     /* --- SLIDER FARBANPASSUNG (CEHA ORANGE) --- */
-    /* Der Balken (Track) */
     .stSlider [data-baseweb="slider"] > div [style*="background-color: rgb(255, 75, 75)"],
     .stSlider [data-baseweb="slider"] > div [style*="background-color: #ff4b4b"] {
         background-color: #e65500 !important;
     }
-    
-    /* Der Griff (Thumb) */
     .stSlider [data-baseweb="slider"] [role="slider"] {
         background-color: #e65500 !important;
         border: 2px solid #ffffff !important;
     }
 
-    /* Abstände */
     .stSelectbox, .stNumberInput, .stSlider, .stRadio { margin-bottom: 40px !important; }
 
-    /* Header & Branding */
     .ceha-header {
         font-family: 'Helvetica Neue', Arial, sans-serif;
         font-size: 48px;
@@ -82,7 +83,6 @@ st.markdown("""
     .orange-dot { height: 12px; width: 12px; background-color: #e65500; margin-right: 15px; flex-shrink: 0; }
     .custom-subheader { color: #ffffff !important; font-family: 'Helvetica Neue', sans-serif; font-weight: 700; font-size: 1.25rem; margin: 0; }
 
-    /* Info-Boxen */
     .promo-box { 
         background-color: #1e1e1e; 
         padding: 25px; 
@@ -93,7 +93,6 @@ st.markdown("""
         color: #dddddd;
     }
 
-    /* --- RESULT BOX STYLING --- */
     div[data-testid="stAlert"] > div { border: none !important; }
     div[data-testid="stAlert"] p { color: #ffffff !important; font-weight: 600 !important; }
     div[data-testid="stAlert"] svg { fill: #ffffff !important; }
@@ -103,7 +102,6 @@ st.markdown("""
     div[data-testid="stAlert"] > div[style*="rgba(255, 171, 0,"] { background-color: #ffab00 !important; }
     div[data-testid="stAlert"] > div[style*="rgba(255, 171, 0,"] p { color: #000000 !important; }
 
-    /* Buttons */
     .stButton > button { 
         background-color: #e65500; 
         color: white !important; 
@@ -114,7 +112,6 @@ st.markdown("""
         border: none;
     }
 
-    /* Metriken */
     div[data-testid="stMetric"] { 
         background-color: #1e1e1e !important; 
         padding: 20px; 
@@ -124,7 +121,6 @@ st.markdown("""
     div[data-testid="stMetricValue"] { color: #ffffff !important; }
     div[data-testid="stMetricLabel"] { color: #aaaaaa !important; }
 
-    /* Strombedarf-Box */
     .wp-bedarf-box { 
         background-color: #1e1e1e; 
         padding: 25px; 
@@ -176,12 +172,22 @@ if "Verbrauch" in modus:
     c1, c2, c3 = st.columns([3, 1.5, 1.5])
     with c1:
         energietraeger = st.selectbox("Energieträger", ["Heizöl", "Erdgas", "Flüssiggas"])
+        
+        # Logik für automatische Wert-Anpassung bei Wechsel
+        if energietraeger != st.session_state.prev_energietraeger:
+            if energietraeger == "Erdgas": st.session_state.verbrauch_val = 20000
+            elif energietraeger == "Heizöl": st.session_state.verbrauch_val = 2500
+            elif energietraeger == "Flüssiggas": st.session_state.verbrauch_val = 3500
+            st.session_state.prev_energietraeger = energietraeger
+
         baujahr_auswahl = st.selectbox("Kesselbaujahr (Technik)", ["Vor 1995 (Konstanttemperaturkessel)", "1995 - 2005 (Niedertemperaturkessel)", "Ab 2006 (Brennwertgerät)"])
         eta = 0.78 if "Konstant" in baujahr_auswahl else (0.86 if "Nieder" in baujahr_auswahl else 0.94)
         co2_faktor_alt = 0.266 if energietraeger == "Heizöl" else (0.202 if energietraeger == "Erdgas" else 0.229)
     with c2:
         unit = "Liter/Jahr" if energietraeger != "Erdgas" else "kWh/Jahr"
-        verbrauch = st.number_input(unit, min_value=0, value=2500, step=100)
+        # Nutzung des session_state für den Wert
+        verbrauch = st.number_input(unit, min_value=0, value=st.session_state.verbrauch_val, step=100, key="verbrauch_input")
+        st.session_state.verbrauch_val = verbrauch
     with c3:
         preis_alt = st.number_input("Preis/Einheit (€)", value=1.05 if energietraeger != "Erdgas" else 0.12, step=0.01)
         aktuelle_kosten = verbrauch * preis_alt
