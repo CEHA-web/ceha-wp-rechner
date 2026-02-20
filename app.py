@@ -1,13 +1,25 @@
 import streamlit as st
 
-# --- CEHA BRANDING & DESIGN (DARK MODE - MINIMALIST - V6) ---
+# --- CEHA BRANDING & DESIGN (DARK MODE - MINIMALIST - V8) ---
 st.set_page_config(page_title="ceha-Energieberatung | WP-Check", layout="centered")
 
-# Initialisierung der Session-State Werte für die automatische Anpassung
-if 'prev_energietraeger' not in st.session_state:
-    st.session_state.prev_energietraeger = "Heizöl"
-if 'verbrauch_val' not in st.session_state:
-    st.session_state.verbrauch_val = 2500
+# Hilfsfunktion für die Formatierung (Tausenderpunkt, keine Nachkommastellen)
+def fmt(wert):
+    return f"{int(wert):,}".replace(",", ".")
+
+# --- SESSION STATE INITIALISIERUNG ---
+if 'verbrauch_input' not in st.session_state:
+    st.session_state['verbrauch_input'] = 2500.0
+
+def handle_change():
+    """ Callback: Passt den Verbrauchswert an, wenn der Energieträger gewechselt wird """
+    et = st.session_state.et_select
+    if et == "Erdgas":
+        st.session_state.verbrauch_input = 20000.0
+    elif et == "Heizöl":
+        st.session_state.verbrauch_input = 2500.0
+    elif et == "Flüssiggas":
+        st.session_state.verbrauch_input = 3500.0
 
 st.markdown("""
     <style>
@@ -60,8 +72,10 @@ st.markdown("""
 
     /* --- SLIDER FARBANPASSUNG (CEHA ORANGE) --- */
     .stSlider [data-baseweb="slider"] > div [style*="background-color: rgb(255, 75, 75)"],
-    .stSlider [data-baseweb="slider"] > div [style*="background-color: #ff4b4b"] {
+    .stSlider [data-baseweb="slider"] > div [style*="background-color: #ff4b4b"],
+    .stSlider [data-baseweb="slider"] > div [style*="background-image: linear-gradient"] {
         background-color: #e65500 !important;
+        background-image: none !important;
     }
     .stSlider [data-baseweb="slider"] [role="slider"] {
         background-color: #e65500 !important;
@@ -171,23 +185,18 @@ waermebedarf, aktuelle_kosten, eta, co2_alt = 0.0, 0.0, 1.0, 0.0
 if "Verbrauch" in modus:
     c1, c2, c3 = st.columns([3, 1.5, 1.5])
     with c1:
-        energietraeger = st.selectbox("Energieträger", ["Heizöl", "Erdgas", "Flüssiggas"])
-        
-        # Logik für automatische Wert-Anpassung bei Wechsel
-        if energietraeger != st.session_state.prev_energietraeger:
-            if energietraeger == "Erdgas": st.session_state.verbrauch_val = 20000
-            elif energietraeger == "Heizöl": st.session_state.verbrauch_val = 2500
-            elif energietraeger == "Flüssiggas": st.session_state.verbrauch_val = 3500
-            st.session_state.prev_energietraeger = energietraeger
-
-        baujahr_auswahl = st.selectbox("Kesselbaujahr (Technik)", ["Vor 1995 (Konstanttemperaturkessel)", "1995 - 2005 (Niedertemperaturkessel)", "Ab 2006 (Brennwertgerät)"])
+        energietraeger = st.selectbox(
+            "Energieträger", 
+            ["Heizöl", "Erdgas", "Flüssiggas"], 
+            key="et_select", 
+            on_change=handle_change
+        )
+        baujahr_auswahl = st.selectbox("Kesselbaujahr (Technik)", ["Vor 1985 (Konstanttemperaturkessel)", "1985 - 2005 (Niedertemperaturkessel)", "Ab 2006 (Brennwertgerät)"])
         eta = 0.78 if "Konstant" in baujahr_auswahl else (0.86 if "Nieder" in baujahr_auswahl else 0.94)
         co2_faktor_alt = 0.266 if energietraeger == "Heizöl" else (0.202 if energietraeger == "Erdgas" else 0.229)
     with c2:
         unit = "Liter/Jahr" if energietraeger != "Erdgas" else "kWh/Jahr"
-        # Nutzung des session_state für den Wert
-        verbrauch = st.number_input(unit, min_value=0, value=st.session_state.verbrauch_val, step=100, key="verbrauch_input")
-        st.session_state.verbrauch_val = verbrauch
+        verbrauch = st.number_input(unit, min_value=0.0, step=100.0, key="verbrauch_input")
     with c3:
         preis_alt = st.number_input("Preis/Einheit (€)", value=1.05 if energietraeger != "Erdgas" else 0.12, step=0.01)
         aktuelle_kosten = verbrauch * preis_alt
@@ -213,7 +222,7 @@ st.divider()
 
 # --- 2. TECHNIK ---
 render_header("2. Technisches Konzept")
-standard_wahl = st.radio("Berechnungsverfahren auswählen:", ["Moderner Technikstandard (Realitätsnah)", "VDI 4650 (Konservative Normrechnung)"], horizontal=True)
+standard_wahl = st.radio("Berechnungsverfahren auswählen:", ["Moderner Technikstandard", "VDI 4650 (Konservative Normrechnung)"], horizontal=True)
 sys_col, temp_col = st.columns(2)
 with sys_col: 
     heizsystem = st.selectbox("Anlage-Hydraulik", ["1. Fußbodenheizung (FBH)", "2. Radiatorheizung (Heizkörper)", "3. Mischsystem (EG: FBH / OG: Radiatoren)"])
@@ -234,7 +243,8 @@ st.divider()
 # --- 3. STROMTARIF & VERGLEICH ---
 render_header("3. Stromtarif & Vergleich")
 strombedarf_wp = waermebedarf / jaz
-st.markdown(f'<div class="wp-bedarf-box"><small style="color: #aaaaaa;">ERRECHNETER STROMBEDARF</small><br><span style="font-size: 32px; font-weight: bold; color: #e65500;">{strombedarf_wp:,.0f} kWh / Jahr</span></div>', unsafe_allow_html=True)
+# Formatierung angewendet: fmt(strombedarf_wp)
+st.markdown(f'<div class="wp-bedarf-box"><small style="color: #aaaaaa;">ERRECHNETER STROMBEDARF</small><br><span style="font-size: 32px; font-weight: bold; color: #e65500;">{fmt(strombedarf_wp)} kWh / Jahr</span></div>', unsafe_allow_html=True)
 
 col_links, col_preis = st.columns([1.5, 1])
 with col_links:
@@ -261,7 +271,8 @@ with c_res2:
 
 m1, m2, m3 = st.columns(3)
 m1.metric("Arbeitszahl (JAZ)", f"{jaz:.2f}")
-m2.metric("Strombedarf", f"{strombedarf_wp:,.0f} kWh")
+# Formatierung angewendet: fmt(strombedarf_wp)
+m2.metric("Strombedarf", f"{fmt(strombedarf_wp)} kWh")
 m3.metric("Heizkosten Neu", f"{stromkosten_wp:,.2f} €")
 
 st.markdown("<br>", unsafe_allow_html=True)
