@@ -1,0 +1,26 @@
+name: Daily Streamlit Reboot
+
+on:
+  schedule:
+    # Führt das Skript jeden Morgen um 04:00 Uhr UTC aus (ca. 05:00 Uhr deutscher Zeit)
+    - cron: '0 4 * * *'
+  workflow_dispatch: # Erlaubt es dir, den Reboot auch manuell bei GitHub zu starten
+
+jobs:
+  reboot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Update Heartbeat File
+        run: |
+          echo "Last Reboot: $(date)" > heartbeat.txt
+
+      - name: Commit and Push
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action Bot"
+          git add heartbeat.txt
+          git commit -m "Automatischer Reboot-Trigger für Streamlit"
+          git push
