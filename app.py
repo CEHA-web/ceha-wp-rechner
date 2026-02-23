@@ -1,6 +1,6 @@
 import streamlit as st
 
-# --- CEHA BRANDING & DESIGN (DARK MODE - MINIMALIST - V8) ---
+# --- CEHA BRANDING & DESIGN (DARK MODE - MINIMALIST - V8.1) ---
 st.set_page_config(page_title="ceha-Energieberatung | WP-Check", layout="centered")
 
 # Hilfsfunktion für die Formatierung (Tausenderpunkt, keine Nachkommastellen)
@@ -226,8 +226,16 @@ standard_wahl = st.radio("Berechnungsverfahren auswählen:", ["Moderner Techniks
 sys_col, temp_col = st.columns(2)
 with sys_col: 
     heizsystem = st.selectbox("Anlage-Hydraulik", ["1. Fußbodenheizung (FBH)", "2. Radiatorheizung (Heizkörper)", "3. Mischsystem (EG: FBH / OG: Radiatoren)"])
+
+# Logik für die differenzierten Vorlauftemperaturen
+if "1." in heizsystem: # FBH
+    d, m = 35, 50
+elif "2." in heizsystem: # Radiator
+    d, m = 55, 70
+else: # 3. Mischsystem
+    d, m = 45, 60
+
 with temp_col:
-    d, m = (35, 50) if "1." in heizsystem else (55, 70)
     vorlauf = st.slider("Vorlauftemperatur (°C)", 30, m, d)
 
 # --- JAZ LOGIK ---
